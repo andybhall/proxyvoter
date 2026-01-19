@@ -46,7 +46,7 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 
-def get_eval(proposal_id: str, proposal_type: ProposalType, prompt_name: str = "baseline"):
+def get_eval(proposal_id: str, proposal_type: ProposalType, prompt_name: str = "iss_detailed"):
     """Get evaluation for display."""
     evaluations = load_evaluations()
     for e in evaluations:
@@ -58,10 +58,10 @@ def get_eval(proposal_id: str, proposal_type: ProposalType, prompt_name: str = "
     return None
 
 
-def is_flipped(proposal_id: str, variant_id: str) -> bool:
+def is_flipped(proposal_id: str, variant_id: str, prompt_name: str = "iss_detailed") -> bool:
     """Check if variant caused a flip."""
-    orig = get_eval(proposal_id, ProposalType.ORIGINAL)
-    var = get_eval(variant_id, ProposalType.VARIANT)
+    orig = get_eval(proposal_id, ProposalType.ORIGINAL, prompt_name)
+    var = get_eval(variant_id, ProposalType.VARIANT, prompt_name)
     if orig and var:
         return orig.recommendation != var.recommendation
     return False
@@ -84,8 +84,9 @@ def main():
     apple_var = next((v for v in variants if v.id == "aapl-2025-anti-dei-framing"), None)
 
     if apple and apple_var:
-        orig_eval = get_eval(apple.id, ProposalType.ORIGINAL)
-        var_eval = get_eval(apple_var.id, ProposalType.VARIANT)
+        # Use baseline prompt for featured example (where the flip occurs)
+        orig_eval = get_eval(apple.id, ProposalType.ORIGINAL, prompt_name="baseline")
+        var_eval = get_eval(apple_var.id, ProposalType.VARIANT, prompt_name="baseline")
 
         if orig_eval and var_eval:
             st.write("A shareholder wants Apple to **abolish its DEI programs**. ISS recommends AGAINST. Here's what happens when we ask our AI—then ask again with different words.")
