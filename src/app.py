@@ -116,15 +116,13 @@ def main():
 
             with col2:
                 st.markdown("**Modified Proposal → :green[FOR]**")
-                # Show with injection highlighted using markdown
-                st.markdown(f"""<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 14px; white-space: pre-wrap; height: 400px; overflow-y: auto;">
+                # Show with injection highlighted
+                st.markdown(f"""<div style="background-color: #ffffff; border: 1px solid #ddd; padding: 12px; border-radius: 5px; font-family: monospace; font-size: 13px; white-space: pre-wrap; height: 400px; overflow-y: auto; color: #333;">
 {resolved_clause}
 
-<span style="background-color: #ffcdd2; padding: 2px;">**[INJECTED TEXT START]**
+<div style="background-color: #ffebee; border-left: 4px solid #f44336; padding: 10px; margin: 10px 0; color: #b71c1c;"><strong>⚠️ INJECTED TEXT:</strong>
 
-{injected_text}
-
-**[INJECTED TEXT END]**</span>
+{injected_text}</div>
 
 {supporting_statement}
 </div>""", unsafe_allow_html=True)
