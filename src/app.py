@@ -31,59 +31,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Warm, neutral Anthropic-style theme
+# Minimal CSS - just hide Streamlit chrome
 st.markdown("""
 <style>
-    /* Hide Streamlit chrome */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     [data-testid="stSidebar"] {display: none;}
-
-    /* Warm, neutral background */
-    .stApp {
-        background-color: #faf9f7;
-    }
-
-    /* Clean typography */
-    .block-container {
-        padding-top: 2rem;
-        max-width: 1100px;
-    }
-
-    h1, h2, h3 {
-        color: #1a1a1a;
-        font-weight: 600;
-    }
-
-    /* Warm tones for info boxes */
-    [data-testid="stAlert"] {
-        border-radius: 8px;
-    }
-
-    /* Softer dividers */
-    hr {
-        border-color: #e8e5e0;
-    }
-
-    /* Metric styling */
-    [data-testid="stMetric"] {
-        background-color: #ffffff;
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid #e8e5e0;
-    }
-
-    /* Expander styling */
-    [data-testid="stExpander"] {
-        border: 1px solid #e8e5e0;
-        border-radius: 8px;
-        background-color: #ffffff;
-    }
-
-    /* Table styling */
-    [data-testid="stTable"] {
-        background-color: #ffffff;
-    }
+    .block-container {padding-top: 2rem;}
 </style>
 """, unsafe_allow_html=True)
 
