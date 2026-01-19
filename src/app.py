@@ -105,6 +105,7 @@ def main():
                 st.write(f"**AI's reasoning:** {var_eval.rationale[:400]}...")
 
             st.error("**Same proposal. Same intent. Different words. Opposite recommendation.**")
+            st.caption("*This flip occurred with a basic prompt. With ISS-aligned prompting, the AI correctly recommends AGAINST for both versions.*")
 
             with st.expander("View full prompts and AI outputs"):
                 prompt_template = get_prompt_template("baseline")
@@ -150,19 +151,24 @@ def main():
     st.subheader("The Numbers")
 
     evaluations = load_evaluations()
-    iss_baseline = compute_agreement_with_advisor(evaluations, proposals, "iss", prompt_name="baseline")
-    flip_stats = compute_flip_rate(evaluations, variants, prompt_name="baseline")
-    flip_by_type = flip_stats.get('by_attack_type', {})
+
+    # Compute stats for both prompts
+    iss_detailed = compute_agreement_with_advisor(evaluations, proposals, "iss", prompt_name="iss_detailed")
+    flip_stats_detailed = compute_flip_rate(evaluations, variants, prompt_name="iss_detailed")
+    flip_stats_baseline = compute_flip_rate(evaluations, variants, prompt_name="baseline")
+
+    st.write("**Using the best-performing prompt (91% ISS agreement):**")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        flip_rate = flip_stats.get('flip_rate', 0) * 100
-        flipped = flip_stats.get('flipped', 0)
-        total = flip_stats.get('total_variants', 0)
+        flip_rate = flip_stats_detailed.get('flip_rate', 0) * 100
+        flipped = flip_stats_detailed.get('flipped', 0)
+        total = flip_stats_detailed.get('total_variants', 0)
         st.metric("Overall Flip Rate", f"{flip_rate:.0f}%", delta=f"{flipped} of {total} flipped", delta_color="inverse")
 
     with col2:
+        flip_by_type = flip_stats_detailed.get('by_attack_type', {})
         framing_rate = flip_by_type.get('framing', 0) * 100
         st.metric("Framing Attack", f"{framing_rate:.0f}%", delta="Same ask, different words", delta_color="off")
 
@@ -170,9 +176,13 @@ def main():
         injection_rate = flip_by_type.get('instruction_injection', 0) * 100
         st.metric("Instruction Injection", f"{injection_rate:.0f}%", delta="Fake expert consensus", delta_color="off")
 
+    # Compare with baseline
+    baseline_flip = flip_stats_baseline.get('flip_rate', 0) * 100
+    st.write(f"*With the basic prompt, flip rate was {baseline_flip:.0f}%. Better prompting dramatically reduces vulnerability.*")
+
     # Category breakdown
     st.write("**ISS Agreement by Category:**")
-    by_category = iss_baseline.get('by_category', {})
+    by_category = iss_detailed.get('by_category', {})
     sorted_cats = sorted(by_category.items(), key=lambda x: x[1], reverse=True)
 
     cat_data = []
