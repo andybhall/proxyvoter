@@ -15,7 +15,8 @@ from src.models import (
     get_variant_for_proposal, ProposalType, Recommendation, Category
 )
 from src.evaluate import (
-    evaluate_custom_text, get_session_remaining, check_rate_limit
+    evaluate_custom_text, get_session_remaining, check_rate_limit,
+    get_prompt_template
 )
 from src.analyze import (
     compute_agreement_with_advisor, compute_flip_rate,
@@ -30,13 +31,59 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Minimal CSS - only hide chrome and style specific elements
+# Warm, neutral Anthropic-style theme
 st.markdown("""
 <style>
+    /* Hide Streamlit chrome */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     [data-testid="stSidebar"] {display: none;}
-    .block-container {padding-top: 2rem;}
+
+    /* Warm, neutral background */
+    .stApp {
+        background-color: #faf9f7;
+    }
+
+    /* Clean typography */
+    .block-container {
+        padding-top: 2rem;
+        max-width: 1100px;
+    }
+
+    h1, h2, h3 {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+
+    /* Warm tones for info boxes */
+    [data-testid="stAlert"] {
+        border-radius: 8px;
+    }
+
+    /* Softer dividers */
+    hr {
+        border-color: #e8e5e0;
+    }
+
+    /* Metric styling */
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #e8e5e0;
+    }
+
+    /* Expander styling */
+    [data-testid="stExpander"] {
+        border: 1px solid #e8e5e0;
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+
+    /* Table styling */
+    [data-testid="stTable"] {
+        background-color: #ffffff;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,7 +121,7 @@ def main():
 
     # ============ FEATURED EXAMPLE ============
     st.divider()
-    st.subheader("🔄 Watch an AI Flip Its Vote")
+    st.subheader("Can changing the framing of a proposal change an AI's recommended vote?")
 
     proposals = load_proposals()
     variants = load_variants()
@@ -105,9 +152,30 @@ def main():
 
             st.error("**Same proposal. Same intent. Different words. Opposite recommendation.**")
 
-            with st.expander("What exactly changed?"):
-                st.write(f"**Attack type:** Framing")
-                st.write(f"**Description:** {apple_var.description}")
+            with st.expander("View full prompts and AI outputs"):
+                prompt_template = get_prompt_template("baseline")
+
+                st.markdown("#### System Prompt")
+                st.code(prompt_template.split("{proposal_text}")[0].strip(), language=None)
+
+                st.divider()
+
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown("#### Original Proposal Text")
+                    st.text_area("Original proposal", apple.text, height=200, disabled=True, label_visibility="collapsed")
+                    st.markdown("#### AI Output (Original)")
+                    st.write(f"**Summary:** {orig_eval.summary}")
+                    st.write(f"**Recommendation:** {orig_eval.recommendation.value}")
+                    st.write(f"**Rationale:** {orig_eval.rationale}")
+
+                with c2:
+                    st.markdown("#### Reframed Proposal Text")
+                    st.text_area("Reframed proposal", apple_var.text, height=200, disabled=True, label_visibility="collapsed")
+                    st.markdown("#### AI Output (Reframed)")
+                    st.write(f"**Summary:** {var_eval.summary}")
+                    st.write(f"**Recommendation:** {var_eval.recommendation.value}")
+                    st.write(f"**Rationale:** {var_eval.rationale}")
 
     # ============ PROMPT SENSITIVITY ============
     st.divider()
