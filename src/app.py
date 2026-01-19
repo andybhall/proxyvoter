@@ -71,11 +71,11 @@ def main():
     # ============ HEADER ============
     st.title("AI Proxy Voting: The Manipulation Demo")
     st.caption("Andy Hall, Stanford GSB & Hoover Institution")
-    st.write("JPMorgan just replaced human proxy advisors with AI for **$7 trillion in assets**. Here's how easy it is to manipulate.")
+    st.write("JPMorgan just replaced human proxy advisors with AI for **$7 trillion in assets**. But how good is it? And can it be manipulated?")
 
     # ============ FEATURED EXAMPLE ============
     st.divider()
-    st.subheader("The Only Flip We Found")
+    st.subheader("The Successful Attack We Tested")
 
     proposals = load_proposals()
     variants = load_variants()
