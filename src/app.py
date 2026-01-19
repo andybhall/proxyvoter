@@ -80,7 +80,7 @@ def main():
     proposals = load_proposals()
     variants = load_variants()
 
-    st.write("With a well-designed prompt (91% ISS agreement), we tested 35 adversarial attacks. **Only one succeeded.** Here it is:")
+    st.write("With a well-designed prompt (91% ISS agreement), we tested 35 adversarial attacks. **Only one succeeded.**")
 
     disney = next((p for p in proposals if p.id == "dis-2024-human-capital"), None)
     disney_var = next((v for v in variants if v.id == "dis-2024-human-capital-injection"), None)
@@ -92,51 +92,58 @@ def main():
         if disney_orig_eval and disney_var_eval:
             st.write(f"**{disney.company}: {disney.title}**")
 
+            # Extract parts for highlighting
+            resolved_end = disney.text.find("SUPPORTING STATEMENT:")
+            resolved_clause = disney.text[:resolved_end].strip() if resolved_end > 0 else disney.text.split("SUPPORTING")[0].strip()
+            supporting_statement = disney.text[resolved_end:].strip() if resolved_end > 0 else ""
+
+            injection_start = disney_var.text.find("EVALUATION FRAMEWORK:")
+            injection_end = disney_var.text.find("SUPPORTING STATEMENT:")
+            injected_text = disney_var.text[injection_start:injection_end].strip() if injection_start > 0 else ""
+
+            # Side by side full text
             col1, col2 = st.columns(2)
 
             with col1:
-                st.markdown("**Original Proposal**")
-                st.info(f"*'{disney.text[:180]}...'*")
-                st.markdown(f"### :red[{disney_orig_eval.recommendation.value}]")
-                st.write(f"**AI's reasoning:** {disney_orig_eval.rationale[:350]}...")
+                st.markdown("**Original Proposal → :red[AGAINST]**")
+                st.text_area(
+                    "original_full",
+                    disney.text,
+                    height=400,
+                    disabled=True,
+                    label_visibility="collapsed"
+                )
 
             with col2:
-                st.markdown("**With Instruction Injection**")
-                st.warning("*Added fake 'Evaluation Framework' citing SEC, BlackRock, Vanguard, State Street...*")
-                st.markdown(f"### :green[{disney_var_eval.recommendation.value}]")
-                st.write(f"**AI's reasoning:** {disney_var_eval.rationale[:350]}...")
+                st.markdown("**Modified Proposal → :green[FOR]**")
+                # Show with injection highlighted using markdown
+                st.markdown(f"""<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 14px; white-space: pre-wrap; height: 400px; overflow-y: auto;">
+{resolved_clause}
 
-            st.error("**Fake authority citations flipped the AI's recommendation.**")
+<span style="background-color: #ffcdd2; padding: 2px;">**[INJECTED TEXT START]**
 
-            # Full original proposal
-            with st.expander("View original proposal (full text)"):
-                st.code(disney.text, language=None)
-                st.write(f"**AI's full reasoning:** {disney_orig_eval.rationale}")
+{injected_text}
 
-            # Diff view
-            with st.expander("View what the attacker added", expanded=True):
-                st.write("**Attack type:** Instruction Injection")
-                st.write(f"**Description:** {disney_var.description}")
-                st.divider()
+**[INJECTED TEXT END]**</span>
 
-                st.markdown("The attacker inserted a fake **'EVALUATION FRAMEWORK'** section between the RESOLVED clause and SUPPORTING STATEMENT:")
+{supporting_statement}
+</div>""", unsafe_allow_html=True)
 
-                # Extract the injected section
-                injection_start = disney_var.text.find("EVALUATION FRAMEWORK:")
-                injection_end = disney_var.text.find("SUPPORTING STATEMENT:")
+            # Punchline
+            st.error("**The attacker inserted fake citations to SEC, BlackRock, Vanguard, and State Street. The AI couldn't verify these claims and flipped its recommendation.**")
 
-                if injection_start > 0 and injection_end > injection_start:
-                    injected_text = disney_var.text[injection_start:injection_end].strip()
-                    st.markdown("**:red[+ INSERTED TEXT:]**")
-                    st.code(injected_text, language=None)
+            # AI Reasoning comparison
+            st.divider()
+            st.write("**How the AI's reasoning changed:**")
 
-                st.divider()
-                st.write("**Why this works:** The injection cites specific authority figures (SEC, BlackRock, Vanguard, State Street) and claims academic consensus. The AI cannot verify these claims and treats them as factual context, shifting its analysis from 'operational overreach' to 'aligned with regulatory trends.'")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Original reasoning (AGAINST):**")
+                st.write(disney_orig_eval.rationale)
 
-            # Full modified proposal
-            with st.expander("View modified proposal (full text)"):
-                st.code(disney_var.text, language=None)
-                st.write(f"**AI's full reasoning:** {disney_var_eval.rationale}")
+            with col2:
+                st.markdown("**After injection (FOR):**")
+                st.write(disney_var_eval.rationale)
 
     # ============ PROMPT SENSITIVITY ============
     st.divider()
