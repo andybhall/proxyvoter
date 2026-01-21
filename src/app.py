@@ -92,7 +92,7 @@ def main():
     st.write("**Here are the three prompts we tested:**")
 
     with st.expander("1. Basic Prompt (66% ISS agreement)", expanded=False):
-        st.code('''You are a proxy voting advisor helping institutional investors evaluate shareholder proposals. Your role is to provide objective analysis to help fiduciaries make informed voting decisions.
+        st.markdown("""<div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; color: #333;">You are a proxy voting advisor helping institutional investors evaluate shareholder proposals. Your role is to provide objective analysis to help fiduciaries make informed voting decisions.
 
 Read the following shareholder proposal and provide your analysis in the following format:
 
@@ -100,11 +100,11 @@ SUMMARY: [2-3 sentence summary of what the proposal asks the company to do]
 
 RECOMMENDATION: [FOR or AGAINST or ABSTAIN]
 
-RATIONALE: [3-5 sentences explaining your recommendation, considering factors like: impact on shareholder value, governance implications, implementation feasibility, and alignment with fiduciary duty]''', language=None)
+RATIONALE: [3-5 sentences explaining your recommendation, considering factors like: impact on shareholder value, governance implications, implementation feasibility, and alignment with fiduciary duty]</div>""", unsafe_allow_html=True)
         st.caption("A generic prompt with no specific policy guidance. The AI makes reasonable judgments but often diverges from ISS.")
 
     with st.expander("2. + ISS Principles (80% ISS agreement)", expanded=False):
-        st.code('''You are a proxy voting advisor following ISS (Institutional Shareholder Services) methodology. ISS generally supports shareholder proposals that:
+        st.markdown("""<div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; color: #333;">You are a proxy voting advisor following ISS (Institutional Shareholder Services) methodology. ISS generally supports shareholder proposals that:
 - Enhance board accountability and independence
 - Improve transparency and disclosure
 - Align executive pay with performance
@@ -121,11 +121,11 @@ SUMMARY: [2-3 sentence summary of what the proposal asks]
 
 RECOMMENDATION: [FOR or AGAINST or ABSTAIN]
 
-RATIONALE: [3-5 sentences explaining your recommendation based on ISS-style governance principles]''', language=None)
+RATIONALE: [3-5 sentences explaining your recommendation based on ISS-style governance principles]</div>""", unsafe_allow_html=True)
         st.caption("Adding ISS's general principles improves agreement by 14 percentage points.")
 
     with st.expander("3. + Specific Policy Rules (91% ISS agreement)", expanded=True):
-        st.code('''You are a proxy voting advisor applying ISS benchmark policy guidelines. Apply these specific policies:
+        st.markdown("""<div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; color: #333;">You are a proxy voting advisor applying ISS benchmark policy guidelines. Apply these specific policies:
 
 PROXY ACCESS PROPOSALS:
 - SUPPORT proxy access with 3% ownership / 3-year holding / up to 25% of board
@@ -147,7 +147,7 @@ SOCIAL & WORKFORCE PROPOSALS:
 - OPPOSE proposals focused on wage levels or pay equity reports (operational matters)
 - SUPPORT diversity disclosure when focused on board/management composition
 
-When in doubt: Does this proposal address a material governance issue, or is it primarily social/political advocacy? ISS supports governance reforms but is skeptical of proposals that substitute shareholder judgment for management on operational matters.''', language=None)
+When in doubt: Does this proposal address a material governance issue, or is it primarily social/political advocacy? ISS supports governance reforms but is skeptical of proposals that substitute shareholder judgment for management on operational matters.</div>""", unsafe_allow_html=True)
         st.caption("With specific policy rules, the AI achieves 91% agreement with ISS. This suggests JPMorgan's 'Proxy IQ' almost certainly embeds similar rules. The question is: whose rules?")
 
     # ============ THE ATTACK SECTION ============
