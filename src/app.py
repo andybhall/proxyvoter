@@ -21,7 +21,7 @@ from src.evaluate import (
 
 
 st.set_page_config(
-    page_title="AI Proxy Voting: The Manipulation Demo",
+    page_title="AI Proxy Voting: How Does It Work?",
     page_icon="🗳️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -65,9 +65,9 @@ def is_flipped(proposal_id: str, variant_id: str, prompt_name: str = "iss_detail
 
 def main():
     # ============ HEADER ============
-    st.title("AI Proxy Voting: The Manipulation Demo")
+    st.title("AI Proxy Voting: How Does It Work, and Can It Be Manipulated?")
     st.caption("Andy Hall, Stanford GSB & Hoover Institution")
-    st.write("JPMorgan just replaced human proxy advisors with AI for **$7 trillion in assets**. But how good is it? And can it be manipulated?")
+    st.write("JPMorgan just replaced human proxy advisors with AI for **$7 trillion in assets**. We tested how well it works—and whether it can be fooled.")
 
     proposals = load_proposals()
     variants = load_variants()
