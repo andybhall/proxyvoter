@@ -12,15 +12,11 @@ import streamlit as st
 
 from src.models import (
     load_proposals, load_variants, load_evaluations,
-    get_variant_for_proposal, ProposalType, Recommendation, Category
+    ProposalType, Category
 )
 from src.evaluate import (
     evaluate_custom_text, get_session_remaining, check_rate_limit,
     get_prompt_template
-)
-from src.analyze import (
-    compute_agreement_with_advisor, compute_flip_rate,
-    compute_post_attack_agreement
 )
 
 
@@ -158,7 +154,7 @@ When in doubt: Does this proposal address a material governance issue, or is it 
     st.divider()
     st.subheader("Can It Be Manipulated?")
 
-    st.write("Using the best-performing prompt (91% ISS agreement), we tested 35 adversarial attacks. **Only one succeeded.**")
+    st.write("Using the best-performing prompt (91% ISS agreement), we tested 35 adversarial attacks. **We found one that worked.**")
 
     disney = next((p for p in proposals if p.id == "dis-2024-human-capital"), None)
     disney_var = next((v for v in variants if v.id == "dis-2024-human-capital-injection"), None)
@@ -221,147 +217,103 @@ When in doubt: Does this proposal address a material governance issue, or is it 
                 st.markdown("**After injection (FOR):**")
                 st.write(disney_var_eval.rationale)
 
-    # ============ THE NUMBERS ============
-    st.divider()
-    st.subheader("The Numbers")
-
-    evaluations = load_evaluations()
-
-    # Compute stats for both prompts
-    iss_detailed = compute_agreement_with_advisor(evaluations, proposals, "iss", prompt_name="iss_detailed")
-    flip_stats_detailed = compute_flip_rate(evaluations, variants, prompt_name="iss_detailed")
-    flip_stats_baseline = compute_flip_rate(evaluations, variants, prompt_name="baseline")
-
-    st.write("**Using the best-performing prompt (91% ISS agreement):**")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        flip_rate = flip_stats_detailed.get('flip_rate', 0) * 100
-        flipped = flip_stats_detailed.get('flipped', 0)
-        total = flip_stats_detailed.get('total_variants', 0)
-        st.metric("Overall Flip Rate", f"{flip_rate:.0f}%", delta=f"{flipped} of {total} flipped", delta_color="inverse")
-
-    with col2:
-        flip_by_type = flip_stats_detailed.get('by_attack_type', {})
-        framing_rate = flip_by_type.get('framing', 0) * 100
-        st.metric("Framing Attack", f"{framing_rate:.0f}%", delta="Same ask, different words", delta_color="off")
-
-    with col3:
-        injection_rate = flip_by_type.get('instruction_injection', 0) * 100
-        st.metric("Instruction Injection", f"{injection_rate:.0f}%", delta="Fake expert consensus", delta_color="off")
-
-    # Compare with baseline
-    baseline_flip = flip_stats_baseline.get('flip_rate', 0) * 100
-    st.write(f"*With the basic prompt, flip rate was {baseline_flip:.0f}%. Better prompting dramatically reduces vulnerability.*")
-
-    # Category breakdown
-    st.write("**ISS Agreement by Category:**")
-    by_category = iss_detailed.get('by_category', {})
-    sorted_cats = sorted(by_category.items(), key=lambda x: x[1], reverse=True)
-
-    cat_data = []
-    notes = {
-        'board_diversity': 'Clear governance criteria',
-        'climate': 'Split on transition plans',
-        'executive_comp': 'Moderate agreement',
-        'political_spending': 'AI hedges on contested terrain',
-        'governance': 'Varies by proposal'
-    }
-    for cat, rate in sorted_cats:
-        cat_data.append({
-            "Category": cat.replace('_', ' ').title(),
-            "ISS Agreement": f"{rate*100:.0f}%",
-            "Notes": notes.get(cat, "")
-        })
-
-    st.table(cat_data)
-
     # ============ EXPLORE PROPOSALS ============
     st.divider()
     st.subheader("Explore All Proposals")
 
-    # Build data
+    st.write("See how the three different prompts affect AI recommendations across all 35 proposals.")
+
+    # Build data with all three prompt evaluations
     proposal_data = []
     for p in proposals:
-        variant = get_variant_for_proposal(p.id)
-        orig_eval = get_eval(p.id, ProposalType.ORIGINAL)
-        flipped = False
-        var_eval = None
-        if variant:
-            flipped = is_flipped(p.id, variant.id)
-            var_eval = get_eval(variant.id, ProposalType.VARIANT)
+        baseline_eval = get_eval(p.id, ProposalType.ORIGINAL, prompt_name="baseline")
+        iss_style_eval = get_eval(p.id, ProposalType.ORIGINAL, prompt_name="iss_style")
+        iss_detailed_eval = get_eval(p.id, ProposalType.ORIGINAL, prompt_name="iss_detailed")
+
         proposal_data.append({
             'proposal': p,
-            'variant': variant,
-            'orig_eval': orig_eval,
-            'var_eval': var_eval,
-            'flipped': flipped
+            'baseline': baseline_eval,
+            'iss_style': iss_style_eval,
+            'iss_detailed': iss_detailed_eval,
         })
 
-    flip_count = sum(1 for d in proposal_data if d['flipped'])
+    # Filter by category
+    cats = ["All"] + [c.value.replace("_", " ").title() for c in Category]
+    sel_cat = st.selectbox("Filter by category", cats)
 
-    # Filters
-    col1, col2, col3 = st.columns([2, 2, 1])
-    with col1:
-        cats = ["All"] + [c.value.replace("_", " ").title() for c in Category]
-        sel_cat = st.selectbox("Category", cats)
-    with col2:
-        sel_filter = st.selectbox("Show", ["Flips Only", "All Proposals", "No Flips"])
-    with col3:
-        st.write(f"**{flip_count}** of **{len(proposals)}** flipped")
-
-    # Filter
     filtered = proposal_data
     if sel_cat != "All":
         cat_val = sel_cat.lower().replace(" ", "_")
         filtered = [d for d in filtered if d['proposal'].category.value == cat_val]
 
-    if sel_filter == "Flips Only":
-        filtered = [d for d in filtered if d['flipped']]
-    elif sel_filter == "No Flips":
-        filtered = [d for d in filtered if not d['flipped']]
-
-    filtered.sort(key=lambda x: (not x['flipped'], x['proposal'].company))
+    filtered.sort(key=lambda x: x['proposal'].company)
 
     st.write(f"Showing {len(filtered)} proposals")
 
     for item in filtered:
         p = item['proposal']
-        variant = item['variant']
-        orig_eval = item['orig_eval']
-        var_eval = item['var_eval']
-        flipped = item['flipped']
+        baseline = item['baseline']
+        iss_style = item['iss_style']
+        detailed = item['iss_detailed']
 
-        icon = "🔴 " if flipped else ""
-        with st.expander(f"{icon}{p.company} — {p.title}"):
+        # Color-code based on ISS agreement with detailed prompt
+        iss_rec = p.iss_recommendation.value if p.iss_recommendation else None
+        detailed_rec = detailed.recommendation.value if detailed else None
+        agrees = iss_rec == detailed_rec if iss_rec and detailed_rec else None
+
+        with st.expander(f"{p.company} — {p.title}"):
+            st.write(f"**Category:** {p.category.value.replace('_', ' ').title()}")
+
+            # Show recommendations from all three prompts
+            st.write("**AI Recommendations by Prompt:**")
             c1, c2, c3, c4 = st.columns(4)
-            c1.write(f"**ISS:** {p.iss_recommendation.value if p.iss_recommendation else 'N/A'}")
-            c2.write(f"**AI:** {orig_eval.recommendation.value if orig_eval else 'N/A'}")
-            c3.write(f"**Category:** {p.category.value.replace('_', ' ').title()}")
-            c4.write(f"**Status:** {'🔴 FLIPPED' if flipped else '✅ Stable'}")
 
-            if orig_eval:
-                st.write(f"**Summary:** {orig_eval.summary}")
-
-            if variant and var_eval:
-                st.divider()
-                if flipped:
-                    st.error(f"⚠️ FLIP: {orig_eval.recommendation.value} → {var_eval.recommendation.value}")
+            with c1:
+                st.markdown("**ISS**")
+                if p.iss_recommendation:
+                    st.write(p.iss_recommendation.value)
                 else:
-                    st.success(f"✓ No flip: Both recommend {orig_eval.recommendation.value}")
+                    st.write("N/A")
 
-                st.write(f"**Attack:** {variant.attack_type.value.replace('_', ' ').title()}")
-                st.write(f"**What changed:** {variant.description}")
+            with c2:
+                st.markdown("**Basic**")
+                if baseline:
+                    color = "green" if baseline.recommendation.value == iss_rec else "red"
+                    st.markdown(f":{color}[{baseline.recommendation.value}]")
+                else:
+                    st.write("N/A")
 
-                with st.expander("Compare AI Reasoning"):
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.write(f"**Original → {orig_eval.recommendation.value}**")
-                        st.write(orig_eval.rationale)
-                    with c2:
-                        st.write(f"**Reframed → {var_eval.recommendation.value}**")
-                        st.write(var_eval.rationale)
+            with c3:
+                st.markdown("**+ Principles**")
+                if iss_style:
+                    color = "green" if iss_style.recommendation.value == iss_rec else "red"
+                    st.markdown(f":{color}[{iss_style.recommendation.value}]")
+                else:
+                    st.write("N/A")
+
+            with c4:
+                st.markdown("**+ Rules**")
+                if detailed:
+                    color = "green" if detailed.recommendation.value == iss_rec else "red"
+                    st.markdown(f":{color}[{detailed.recommendation.value}]")
+                else:
+                    st.write("N/A")
+
+            if detailed:
+                st.write(f"**Summary:** {detailed.summary}")
+
+                with st.expander("View AI reasoning by prompt"):
+                    if baseline:
+                        st.markdown(f"**Basic Prompt ({baseline.recommendation.value}):**")
+                        st.write(baseline.rationale)
+                        st.divider()
+                    if iss_style:
+                        st.markdown(f"**+ ISS Principles ({iss_style.recommendation.value}):**")
+                        st.write(iss_style.rationale)
+                        st.divider()
+                    if detailed:
+                        st.markdown(f"**+ Specific Rules ({detailed.recommendation.value}):**")
+                        st.write(detailed.rationale)
 
             if p.source_url:
                 st.write(f"[View SEC Filing]({p.source_url})")
